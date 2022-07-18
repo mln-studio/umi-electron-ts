@@ -41,3 +41,21 @@ $ conventional-changelog --help
   }
 }
 ```
+
+### Usage
+
+```bash
+$ git add .
+$ yarn commit
+cz-cli@4.2.5, cz-conventional-changelog@3.3.0
+
+? Select the type of change that you're committing: (Use arrow keys)
+❯ feat:     A new feature
+  fix:      A bug fix
+  docs:     Documentation only changes
+  style:    Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)
+  refactor: A code change that neither fixes a bug nor adds a feature
+  perf:     A code change that improves performance
+  test:     Adding missing tests or correcting existing tests
+
+```
