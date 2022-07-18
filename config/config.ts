@@ -9,6 +9,10 @@ export default defineConfig({
   layout: {
     title: '@umijs/max',
   },
+  plugins: [`${__dirname}/plugin.electron.main`],
+  electron: {
+    main: 'electron',
+  },
   routes: [
     {
       path: '/',
@@ -25,11 +29,10 @@ export default defineConfig({
       component: './Access',
     },
     {
-        name: ' CRUD 示例',
-        path: '/table',
-        component: './Table',
+      name: ' CRUD 示例',
+      path: '/table',
+      component: './Table',
     },
   ],
   npmClient: 'yarn',
 });
-
