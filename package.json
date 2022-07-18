@@ -3,6 +3,8 @@
   "author": "周文龙 <zhouwenlong.sh@chinaccs.cn>",
   "scripts": {
     "build": "max build electron",
+    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -w -r 0",
+    "commit": "cz",
     "dev": "max dev electron",
     "electron:dev": "npm run dev",
     "postinstall": "max setup",
