@@ -7,9 +7,10 @@ const createWindow = () => {
     webPreferences: {},
   });
 
-  // if (process.env.NODE_ENV === 'development') {
-  win.loadURL('http://localhost:8000');
-  // }
+  if (process.env.NODE_ENV === 'development') {
+    win.webContents.openDevTools();
+    win.loadURL('http://localhost:8000');
+  }
   // win.loadFile('index.html')
 };
 

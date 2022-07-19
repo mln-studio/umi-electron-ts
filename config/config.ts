@@ -1,7 +1,12 @@
 import { defineConfig } from '@umijs/max';
 
 export default defineConfig({
-  antd: {},
+  antd: {
+    configProvider: {},
+    dark: true,
+    compact: true,
+    import: true,
+  },
   access: {},
   model: {},
   initialState: {},
@@ -12,6 +17,7 @@ export default defineConfig({
   plugins: [`${__dirname}/plugin.electron.main`],
   electron: {
     main: 'electron',
+    port: 5858,
   },
   routes: [
     {

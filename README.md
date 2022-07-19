@@ -2,6 +2,20 @@
 
 `@umijs/max` 模板项目，更多功能参考 [Umi Max 简介](https://next.umijs.org/zh-CN/docs/max/introduce)
 
+## Configuration used **config/config.ts** or **.umirc.ts**
+
+```typescript
+import { defineConfig } from '@umijs/max';
+
+export default defineConfig({
+  plugins: [`${__dirname}/plugin.electron.main`],
+  electron: {
+    main: 'electron',
+    port: 5858, // electron debug port
+  },
+});
+```
+
 ## Commit message format
 
 ### References
