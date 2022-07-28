@@ -10,3 +10,7 @@
 /.umi-test
 /dist
 /.mfsu
+
+/.docker
+
+**/.DS_Store

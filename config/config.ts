@@ -1,11 +1,12 @@
 import { defineConfig } from '@umijs/max';
+import routes from './routes';
 
 export default defineConfig({
   antd: {
     configProvider: {},
     dark: true,
     compact: true,
-    import: true,
+    import: false,
   },
   access: {},
   model: {},
@@ -18,27 +19,14 @@ export default defineConfig({
   electron: {
     main: 'electron',
     port: 5858,
+    build: {
+      appId: 'org.melon.electron.demo',
+      mac: {
+        category: 'public.melon.electron',
+      },
+    },
   },
-  routes: [
-    {
-      path: '/',
-      redirect: '/home',
-    },
-    {
-      name: '首页',
-      path: '/home',
-      component: './Home',
-    },
-    {
-      name: '权限演示',
-      path: '/access',
-      component: './Access',
-    },
-    {
-      name: ' CRUD 示例',
-      path: '/table',
-      component: './Table',
-    },
-  ],
+  routes,
+  publicPath: './',
   npmClient: 'yarn',
 });

@@ -3,6 +3,8 @@ import Config from '@umijs/bundler-webpack/compiled/webpack-5-chain';
 import { IApi } from '@umijs/max';
 import { chokidar } from '@umijs/utils';
 import { ChildProcessWithoutNullStreams, spawn } from 'child_process';
+// import yargs from 'yargs'
+import * as fse from 'fs-extra';
 import * as path from 'path';
 
 const getElectronSrcDir = (api: IApi) => {
@@ -12,10 +14,6 @@ const getElectronSrcDir = (api: IApi) => {
 const getElectronDevDir = (api: IApi) => {
   return path.join(api.paths.absTmpPath, 'electron');
 };
-
-// const getElectronBuildDir = (api: IApi) => {
-//   return path.join(api.paths.absOutputPath, 'electron')
-// }
 
 const build = async (config: webpack.Configuration) => {
   return await new Promise<void>((resolve, reject) => {
@@ -35,29 +33,36 @@ const getBaseWebpackConfig = (api: IApi): Config => {
     api.env === 'development' ? 'development' : 'production';
   const config = new Config();
   config.mode(mode);
-  config.node.set('__filename', false).set('__dirname', false);
+  // config.node.set('__filename', false).set('__dirname', false)
   config.devtool(mode === 'development' ? 'inline-source-map' : false);
   config.resolve.extensions.add('.ts').add('.js');
-  //   // .options({ transpileOnly: true });
-  config.output.path(getElectronDevDir(api));
+  config.module.rule('ts').exclude.add(/node_modules/);
+  config.module
+    .rule('ts')
+    .test(/\.ts?$/)
+    .use('ts')
+    .loader('ts-loader')
+    .options({ transpileOnly: true });
+  config.output.path(
+    mode === 'development' ? getElectronDevDir(api) : api.paths.absOutputPath,
+  );
   config.output.filename('[name].js');
 
   return config;
 };
 
 const buildMain = (api: IApi) => {
-  console.log(`buildMain called with ${api.name} plugin.`);
   const config = getBaseWebpackConfig(api);
   config.context(path.join(process.cwd(), 'src', 'electron'));
   config.entry('main').add(path.join(getElectronSrcDir(api), './main.ts'));
   config.target('electron-main');
-  config.output.library('main').libraryTarget('commonjs2');
+  // config.output.library('main').libraryTarget('commonjs2')
 
   return build(config.toConfig());
 };
 
 const buildPreload = (api: IApi) => {
-  console.debug(`buildPreload called with ${api.name} plugin.`);
+  api.logger.debug(`buildPreload called with ${api.name} plugin.`);
 };
 
 const runDev = async (api: IApi) => {
@@ -69,9 +74,7 @@ const runDev = async (api: IApi) => {
   let spawnProcess: ChildProcessWithoutNullStreams | null = null;
 
   const runMain = () => {
-    console.debug('runMain called.');
     if (spawnProcess !== null) {
-      console.debug('spawnProcess killed.');
       spawnProcess.kill('SIGKILL');
       spawnProcess = null;
     }
@@ -112,6 +115,45 @@ const runDev = async (api: IApi) => {
   await runMain();
 };
 
+const buildDist = (api: IApi) => {
+  const { build } = api.config.electron;
+  const outputDir = api.paths.absOutputPath;
+
+  api.pkg.main = 'main.js';
+  delete api.pkg.devDependencies;
+  delete api.pkg.scripts;
+  delete api.pkg.config;
+
+  // TODO: Exclude dependencies
+  fse.ensureDirSync(`${api.paths.absOutputPath}/node_modules`);
+  fse.writeFileSync(
+    `${outputDir}/package.json`,
+    JSON.stringify(api.pkg, null, 2),
+  );
+
+  // const { configureBuildCommand } = require('electron-builder/out/builder')
+  // const builderArgs = yargs
+  //   .command(['build', '*'], 'Build', configureBuildCommand)
+  //   .parse(process.argv)
+  // api.logger.info(JSON.stringify(builderArgs, null, 2))
+  require('electron-builder')
+    .build({
+      config: {
+        directories: {
+          output: outputDir,
+          app: outputDir,
+        },
+        files: ['**'],
+        extends: null,
+        ...build,
+        // ...builderArgs,
+      },
+    })
+    .then(() => {
+      api.logger.info('build electron success');
+    });
+};
+
 const runBuild = async (api: IApi) => {
   await buildMain(api);
   await buildPreload(api);
@@ -127,6 +169,7 @@ export default (api: IApi) => {
           renderer: joi.string(),
           preload: joi.string(),
           port: joi.number(),
+          build: joi.object(),
         });
       },
     },
@@ -136,26 +179,33 @@ export default (api: IApi) => {
   api.registerCommand({
     name: 'electron',
     fn({ args }) {
-      console.log(`electron command called with args: ${args}`);
       const arg = args._[0];
       if (arg === 'init') {
-        console.log('electron:init command called.');
+        api.logger.debug('registerCommand called for "electron init".');
       }
     },
   });
 
   // start dev electron
   api.onStart(() => {
-    console.log('api.onStart called.');
+    api.logger.info('Starting...');
     runBuild(api);
   });
 
   api.onDevCompileDone(({ isFirstCompile }) => {
-    console.debug(`isFirstCompile: ${isFirstCompile}`);
     if (isFirstCompile) {
+      api.logger.event('Run electron main process.');
       runDev(api).catch((err) => {
         console.error(err);
       });
+    }
+  });
+
+  api.onBuildComplete(({ err }) => {
+    api.logger.event('Start to build electron app...');
+
+    if (err === null) {
+      buildDist(api);
     }
   });
 };
